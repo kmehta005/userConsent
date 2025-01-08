@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consent Manager</title>
+</head>
+<body>
+
+<div id="consent-banner" style="display: none;">
+    <p>We need your consent to track your data. Do you agree?</p>
+    <button onclick="setConsent(true)">Yes</button>
+    <button onclick="setConsent(false)">No</button>
+</div>
+
+<script>
+    // Get UUID from localStorage or create a new one
+    let uuid = localStorage.getItem('user_uuid');
+    if (!uuid) {
+        uuid = generateUUID();
+        localStorage.setItem('user_uuid', uuid);
+    }
+
+    // Check if consent status is already stored
+    checkConsent(uuid);
+
+    function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    function checkConsent(uuid) {
+        fetch('http://localhost:8080/api/get-consent-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: uuid,
+        })
+            .then(response => response.json())
+            .then(consent => {
+                if (!consent) {  // If consent is not granted or record doesn't exist
+                    alert("checkConsent");
+                    console.log('Checking consent for UUID:', JSON.stringify(uuid));
+                    document.getElementById('consent-banner').style.display = 'block';
+                }else{
+                    console.log('consent found for UUID:', uuid);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching consent status:', error);
+                // Show the banner as a fallback in case of an error
+                document.getElementById('consent-banner').style.display = 'block';
+            });
+    }
+
+    function setConsent(consentGranted) {
+        alert("setConsent");
+        fetch('http://localhost:8080/api/set-consent-status', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ uuid: uuid, consentGranted: consentGranted })
+        })
+            .then(() => {
+                document.getElementById('consent-banner').style.display = 'none';
+                console.log('Checking consent for UUID:', uuid);
+                alert('############');
+            });
+    }
+</script>
+
+</body>
+</html>
